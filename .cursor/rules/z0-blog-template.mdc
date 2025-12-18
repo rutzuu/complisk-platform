@@ -1,0 +1,431 @@
+---
+alwaysApply: true
+---
+
+# Z0 Blog Template - Development Guidelines
+
+## Code Style and Structure
+
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Favor iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`).
+- Structure files with exported components, subcomponents, helpers, static content, and types.
+- Use lowercase with dashes for directory names (e.g., `components/blog-section`).
+- Never add inline comments unless instructed.
+
+## Project Structure
+
+```
+z0-blog-template/
+├── 🔧 Configuration Files
+├── 📱 App Directory (Next.js App Router)
+├── ⚡ Actions (Server Actions)
+├── 🏗️ Collections (Payload CMS)
+├── 🧩 Components (React Components)
+├── 📊 Data (Static Data - Optional)
+├── 🪝 Hooks (Custom React Hooks)
+├── 🛠️ Lib (Utilities & Configurations)
+├── 📁 Media (Payload CMS Uploads)
+├── 🌐 Public (Static Assets)
+└── 🏷️ Types (TypeScript Definitions)
+```
+
+## Directory Organization
+
+### 🔧 Root Configuration Files
+
+```
+z0-blog-template/
+├── package.json                 # Dependencies and scripts
+├── tsconfig.json               # TypeScript configuration
+├── next.config.ts              # Next.js configuration
+├── payload.config.ts           # Payload CMS configuration
+├── components.json             # Shadcn/ui configuration
+├── eslint.config.mjs          # ESLint configuration
+├── postcss.config.mjs         # PostCSS configuration
+├── next-env.d.ts              # Next.js type definitions
+├── payload-types.ts           # Auto-generated Payload types
+└── .env.local                 # Environment variables (not in git)
+```
+
+### 📱 App Directory (`/app`)
+
+Following Next.js 15 App Router structure with route groups:
+
+```
+app/
+├── (frontend)/                 # Public-facing routes
+│   ├── layout.tsx             # Frontend layout with navbar
+│   ├── page.tsx               # Homepage
+│   ├── globals.css            # Global styles
+│   └── blog/
+│       ├── page.tsx           # Blog listing page
+│       └── [slug]/
+│           └── page.tsx       # Individual blog post
+└── (payload)/                 # Payload CMS admin routes
+    ├── layout.tsx             # Admin layout
+    ├── custom.scss            # Admin custom styles
+    ├── admin/
+    │   ├── importMap.js       # Payload import map
+    │   └── [[...segments]]/
+    │       ├── page.tsx       # Admin pages
+    │       └── not-found.tsx  # Admin 404
+    └── api/
+        ├── [...slug]/
+        │   └── route.ts       # Payload API routes
+        ├── graphql/
+        │   └── route.ts       # GraphQL endpoint
+        └── graphql-playground/
+            └── route.ts       # GraphQL playground
+├── robots.ts                  # SEO robots.txt
+└── sitemap.ts                 # Dynamic sitemap generation
+```
+
+### ⚡ Actions Directory (`/actions`)
+
+Server Actions for data fetching and mutations:
+
+```
+actions/
+└── blog.ts                    # Blog-related server actions
+```
+
+**Function patterns:**
+- `getFeaturedBlog()` - Fetch featured blog post
+- `getBlogPosts()` - Fetch non-featured blog posts
+- `getAllBlogPosts(limit?)` - Fetch all posts with optional limit
+- `getBlogPostBySlug(slug)` - Fetch specific post by slug
+- `getPaginatedBlogPosts()` - Fetch paginated posts
+- `getBlogPostsByCategory(category)` - Fetch posts by category
+
+### 🏗️ Collections Directory (`/collections`)
+
+Payload CMS collection definitions:
+
+```
+collections/
+├── Media.ts                   # Media/file uploads collection
+├── Posts.ts                   # Blog posts collection
+├── Template.ts                # Email templates collection
+├── Users.ts                   # User management collection
+├── Pages.ts                   # Example: Static pages (optional)
+└── Services.ts                # Example: Services collection (optional)
+```
+
+### 🧩 Components Directory (`/components`)
+
+React components organized by feature:
+
+```
+components/
+├── ui/                        # Shadcn/ui components
+│   ├── button.tsx
+│   ├── card.tsx
+│   ├── badge.tsx
+│   └── ... (other shadcn components)
+├── blog/                      # Blog-specific components
+│   └── blogs-section.tsx
+├── hero-section.tsx           # Homepage hero
+├── navbar.tsx                 # Navigation component
+└── tailwind-indicator.tsx     # Dev environment indicator
+```
+
+### 📊 Data Directory (`/data` - Optional)
+
+Static data and configuration:
+
+```
+data/
+├── navigation.ts              # Navigation menu items
+├── site-config.ts            # Site configuration
+└── ... (other static data)
+```
+
+### 🪝 Hooks Directory (`/hooks`)
+
+Custom React hooks:
+
+```
+hooks/
+├── use-mobile.ts              # Mobile detection hook
+└── ... (other custom hooks)
+```
+
+### 🛠️ Lib Directory (`/lib`)
+
+Utilities, configurations, and helper functions:
+
+```
+lib/
+├── utils.ts                   # General utility functions (cn, etc.)
+├── payload.ts                 # Payload CMS client configuration
+└── metadata.ts                # SEO metadata generation utilities
+```
+
+### 🏷️ Types Directory (`/types`)
+
+TypeScript type definitions:
+
+```
+types/
+├── blog.ts                    # Blog-related types
+└── ... (other type definitions)
+```
+
+### 🌐 Public Directory (`/public`)
+
+Static assets:
+
+```
+public/
+├── images/
+├── icons/
+└── ... (other static files)
+```
+
+## Organization Principles
+
+### 1. Feature-First Organization
+
+- Group related files by feature/domain
+- Keep components close to where they're used
+- Example: All blog-related components in `/components/blog/`
+
+### 2. Separation of Concerns
+
+- **Actions**: Server-side data operations
+- **Components**: UI presentation layer
+- **Hooks**: Reusable stateful logic
+- **Lib**: Pure utility functions
+- **Types**: Type definitions
+
+### 3. Consistent Naming Conventions
+
+- **Directories**: lowercase with dashes (`blog-components/`)
+- **Files**: lowercase with dashes (`hero-section.tsx`)
+- **Components**: PascalCase (`HeroSection`)
+- **Functions**: camelCase (`getBlogPosts`)
+
+### 4. Import Path Organization
+
+```typescript
+// External libraries first
+import React from 'react'
+import { Button } from '@/components/ui/button'
+
+// Internal imports by proximity
+import { getBlogPosts } from '@/actions/blog'
+import { BlogCard } from '@/components/blog/blog-card'
+import type { BlogPost } from '@/types/blog'
+```
+
+## Best Practices by Directory
+
+### Server Actions (`/actions`)
+
+- Use `'use server'` directive at the top
+- Handle errors gracefully with try-catch
+- Return serializable data only
+- Follow naming convention: `getX`, `createX`, `updateX`, `deleteX`
+- Always type return values
+
+```typescript
+'use server'
+
+import { payload } from '@/lib/payload'
+import type { BlogPost } from '@/types/blog'
+
+export async function getBlogPosts(): Promise<BlogPost[]> {
+  try {
+    const result = await payload.find({
+      collection: 'posts',
+      sort: '-createdAt',
+    })
+    return result.docs as unknown as BlogPost[]
+  } catch (error) {
+    console.error('Error fetching blog posts:', error)
+    return []
+  }
+}
+```
+
+### Components (`/components`)
+
+- Keep components small and focused
+- Use TypeScript interfaces for props
+- Implement proper error boundaries
+- Follow accessibility guidelines
+- Prefer Server Components over Client Components
+
+```typescript
+interface HeroSectionProps {
+  title: string
+  description?: string
+}
+
+export function HeroSection({ title, description }: HeroSectionProps) {
+  return (
+    <section className="container">
+      <h1>{title}</h1>
+      {description && <p>{description}</p>}
+    </section>
+  )
+}
+```
+
+### Types (`/types`)
+
+- Export types from specific domain files
+- Use descriptive names
+- Leverage TypeScript utility types
+- Keep types close to their usage
+
+```typescript
+export type BlogPost = {
+  id: string | number
+  title: string
+  slug: string
+  content: any
+}
+
+export type FeaturedBlog = BlogPost
+```
+
+### Hooks (`/hooks`)
+
+- Start with `use` prefix
+- Return objects for multiple values
+- Handle cleanup in useEffect
+- Make them reusable and testable
+
+```typescript
+export function useMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    // Implementation
+  }, [])
+  
+  return isMobile
+}
+```
+
+### Collections (`/collections`)
+
+- Use clear field names and descriptions
+- Implement proper validation
+- Add admin descriptions for editors
+- Use hooks for auto-generation (slugs, etc.)
+
+```typescript
+export const Posts: CollectionConfig = {
+  slug: 'posts',
+  admin: {
+    useAsTitle: 'title',
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    // ... other fields
+  ],
+}
+```
+
+## Payload CMS Patterns
+
+- Structure collections with clear relationships and field validation
+- Implement proper access control with field-level permissions
+- Create reusable field groups and blocks for content modeling
+- Follow the Payload hooks pattern for extending functionality
+- Use migrations for database schema changes
+- Organize collections by domain or feature
+- Implement proper upload handling with Vercel Blob storage
+
+## SEO Best Practices
+
+- Use `generateMetadata` from `lib/metadata.ts` for all pages
+- Implement dynamic metadata for blog posts
+- Create proper OpenGraph images
+- Use structured data (JSON-LD) where appropriate
+- Maintain `robots.ts` and `sitemap.ts` files
+- Add proper meta descriptions and titles
+
+## Storage Configuration
+
+The template supports both local storage and Vercel Blob storage:
+
+- **Local**: Files stored in `/media` directory (default)
+- **Vercel Blob**: Cloud storage when `BLOB_READ_WRITE_TOKEN` is set
+- Configuration is automatic based on environment variables
+
+## Extending the Template
+
+### Adding a New Collection
+
+1. Create a new file in `/collections` (e.g., `Events.ts`)
+2. Define your collection schema
+3. Import it in `payload.config.ts`
+4. Add it to the collections array
+5. Create corresponding types in `/types`
+6. Create server actions in `/actions`
+
+### Adding a New Page
+
+1. Create a new route in `app/(frontend)`
+2. Export metadata using `generateMetadata`
+3. Fetch data using server actions
+4. Add route to `sitemap.ts` if needed
+
+### Adding Custom Fields
+
+Refer to example collections (`Pages.ts`, `Services.ts`) for patterns on:
+- Text fields
+- Rich text (Lexical)
+- Upload fields
+- Select fields
+- Group fields
+- Array fields
+
+## TypeScript Usage
+
+- Use TypeScript for all code; prefer interfaces over types
+- Avoid enums; use string unions instead
+- Use functional components with TypeScript interfaces
+- Leverage Payload's auto-generated types
+
+## Error Handling and Validation
+
+- Prioritize error handling: handle errors and edge cases early
+- Use early returns and guard clauses
+- Implement proper error logging
+- Use Zod for form validation when needed
+- Model expected errors as return values in Server Actions
+
+## UI and Styling
+
+- Use Shadcn UI components for consistency
+- Implement responsive design with Tailwind CSS
+- Use a mobile-first approach
+- Follow the existing design system
+
+## Performance Optimization
+
+- Minimize `'use client'` usage
+- Favor React Server Components (RSC)
+- Use dynamic loading for non-critical components
+- Optimize images: use proper formats and lazy loading
+- Implement proper caching strategies
+
+## Key Conventions
+
+- Optimize Web Vitals (LCP, CLS, FID)
+- Limit `'use client'`:
+  - Favor server components and Next.js SSR
+  - Use only for Web API access in small components
+  - Avoid for data fetching or state management
+
+Follow Next.js docs for Data Fetching, Rendering, and Routing.
