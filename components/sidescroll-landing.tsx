@@ -27,8 +27,15 @@ export function SidescrollLanding() {
     damping: 30,
     restDelta: 0.001,
   })
+  
+  const smoothAirplaneProgress = useSpring(scrollYProgress, {
+    stiffness: 75,
+    damping: 50,
+    restDelta: 0.001,
+  })
 
   const translateX = useTransform(smoothProgress, [0, 1], ["0%", "-66.666%"])
+  const airplaneX = useTransform(smoothAirplaneProgress, [0, 1], ["120%", "-650%"])
 
   const scrollByAmount = useCallback((amount: number) => {
     window.scrollBy({
@@ -120,6 +127,19 @@ export function SidescrollLanding() {
             priority
           />
         </div>
+
+        <motion.div
+          style={{ x: airplaneX }}
+          className="pointer-events-none fixed top-[10%] right-0 z-40 w-[250px] md:w-[300px] lg:w-[260px]"
+        >
+          <Image
+            src="/airplane.png"
+            alt="Airplane"
+            width={260}
+            height={130}
+            className="h-auto w-full"
+          />
+        </motion.div>
       </div>
     </div>
   )
