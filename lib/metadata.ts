@@ -12,9 +12,9 @@ interface MetadataConfig {
 }
 
 export const siteConfig = {
-  name: 'Z0 Blog Template',
+  name: 'Complisk Platform',
   description:
-    'A modern, clean blog template built with Next.js, Payload CMS, and Tailwind CSS. From Zero to Hero - strip away complexity and focus on content.',
+    'A lightweight, location-based promotion platform for small businesses. Create time-limited promotional offers with QR codes, and let customers browse active deals by category and location.',
   url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   creator: '@zerosyslabs',
 }
