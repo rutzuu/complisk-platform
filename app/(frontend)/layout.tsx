@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
-import { Navbar } from "@/components/navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,21 +15,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zerosyslabs Blog Template",
-  description: "A modern, clean blog template built with Next.js, Payload CMS, and Tailwind CSS. From Zero to Hero.",
-  keywords: ["blog", "template", "nextjs", "payload", "tailwind", "zerosyslabs"],
-  authors: [{ name: "Zerosyslabs", url: "https://www.zerosyslabs.com" }],
+  title: "Complisk Platform",
+  description: "A lightweight, location-based promotion platform for small businesses. Create time-limited promotional offers with QR codes, and let customers browse active deals by category and location.",
+  keywords: ["complisk", "promotions", "local deals", "QR codes", "small business", "location-based", "deals", "offers"],
+  authors: [{ name: "Complisk" }],
   openGraph: {
-    title: "Zerosyslabs Blog Template",
-    description: "A modern, clean blog template built with Next.js, Payload CMS, and Tailwind CSS. From Zero to Hero.",
-    url: "https://www.zerosyslabs.com",
-    siteName: "Zerosyslabs",
+    title: "Complisk Platform",
+    description: "Local deal discovery + QR redemption. Browse time-limited promotional offers from small businesses near you.",
+    siteName: "Complisk",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Zerosyslabs Blog Template",
-    description: "A modern, clean blog template built with Next.js, Payload CMS, and Tailwind CSS. From Zero to Hero.",
+    title: "Complisk Platform",
+    description: "Local deal discovery + QR redemption. Browse time-limited promotional offers from small businesses near you.",
   },
 };
 
@@ -40,11 +38,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
         <main>{children}</main>
         <Toaster />
         <TailwindIndicator />
