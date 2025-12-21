@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Calendar, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { getBlogPostBySlug, getAllBlogPosts } from "@/actions/blog"
+import { getBlogPostBySlug } from "@/actions/blog"
 import { generateMetadata as generateSEOMetadata } from "@/lib/metadata"
+
+export const dynamic = 'force-dynamic'
 
 function formatDate(timestamp: string) {
   const date = new Date(timestamp)
@@ -49,14 +51,6 @@ export async function generateMetadata({
     modifiedTime: post.updatedAt,
     tags: post.keywords?.split(',').map(k => k.trim()) || [],
   })
-}
-
-export async function generateStaticParams() {
-  const posts = await getAllBlogPosts()
-  
-  return posts.map((post) => ({
-    slug: post.slug,
-  }))
 }
 
 const Page = async ({ params }: BlogPostPageProps) => {

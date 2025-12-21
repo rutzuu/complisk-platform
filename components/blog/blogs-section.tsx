@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { payload } from "@/lib/payload";
+import { getAllBlogPosts } from "@/actions/blog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, ArrowRight } from "lucide-react";
@@ -14,16 +14,7 @@ function formatDate(timestamp: string) {
 }
 
 const BlogsSection = async () => {
-  const blogs = await payload.find({
-    collection: "posts",
-    limit: 6,
-    sort: "-createdAt",
-    where: {
-      includedInBlog: {
-        equals: true,
-      },
-    },
-  });
+  const blogs = await getAllBlogPosts(6);
 
   return (
     <section className="py-24 bg-muted/30">
@@ -40,9 +31,9 @@ const BlogsSection = async () => {
           </p>
         </div>
 
-        {blogs.docs.length > 0 ? (
+        {blogs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {blogs.docs.map((blog) => (
+            {blogs.map((blog) => (
               <Link
                 href={`/blog/${blog.slug}`}
                 key={blog.id}
@@ -77,14 +68,16 @@ const BlogsSection = async () => {
           </div>
         )}
 
-        <div className="text-center">
-          <Button variant="outline" asChild>
-            <Link href="/blog">
-              View All Posts
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Link>
-          </Button>
-        </div>
+        {blogs.length > 0 && (
+          <div className="text-center">
+            <Button variant="outline" asChild>
+              <Link href="/blog">
+                View All Posts
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

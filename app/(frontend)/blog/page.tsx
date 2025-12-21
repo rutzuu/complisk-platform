@@ -5,6 +5,8 @@ import { Calendar, ArrowRight } from "lucide-react"
 import { getAllBlogPosts } from "@/actions/blog"
 import { generateMetadata as generateSEOMetadata } from "@/lib/metadata"
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = generateSEOMetadata({
   title: "Blog",
   description: "Insights, tutorials, and thoughts on modern web development and design.",
