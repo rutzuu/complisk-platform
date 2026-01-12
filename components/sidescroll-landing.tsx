@@ -129,13 +129,11 @@ export function SidescrollLanding() {
   const [airplaneX, setAirplaneX] = useState(100);
 
   const { scrollYProgress } = useScroll();
-
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001,
   });
-
   const translateX = useTransform(smoothProgress, [0, 1], ['0%', '-110%']);
 
   const scrollByAmount = useCallback((amount: number) => {
@@ -145,10 +143,25 @@ export function SidescrollLanding() {
     });
   }, []);
 
+  const backgrounds = [
+    '/bg.png',
+    '/new-assets/sunday.webp',
+    '/new-assets/night.webp',
+  ];
+  const buildingBottoms = ['14dvh', '28dvh', '28dvh'];
+  const carBottoms = ['8%', '20%', '20%'];
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBgIndex((prev) => (prev + 1) % backgrounds.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const scrollStep = window.innerHeight * 0.3;
-
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         scrollByAmount(scrollStep);
@@ -157,17 +170,12 @@ export function SidescrollLanding() {
         scrollByAmount(-scrollStep);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [scrollByAmount]);
 
   useEffect(() => {
     let currentX = 100;
-
     const animateAirplane = () => {
       const controls = animate(currentX, -20, {
         duration: 8,
@@ -182,10 +190,8 @@ export function SidescrollLanding() {
           animateAirplane();
         },
       });
-
       return controls;
     };
-
     const controls = animateAirplane();
     return () => controls.stop();
   }, []);
@@ -204,7 +210,7 @@ export function SidescrollLanding() {
               className="relative h-dvh w-[100dvw] flex-shrink-0"
             >
               <Image
-                src="/bg.png"
+                src={backgrounds[currentBgIndex]}
                 alt="Road background"
                 fill
                 className="object-fill object-bottom"
@@ -212,6 +218,7 @@ export function SidescrollLanding() {
               />
             </div>
           ))}
+
           <div className="pointer-events-none absolute inset-0">
             {buildings.map((building) => (
               <div
@@ -220,6 +227,7 @@ export function SidescrollLanding() {
                 style={{
                   left: building.left,
                   height: '360px',
+                  bottom: buildingBottoms[currentBgIndex],
                 }}
               >
                 <div className="relative h-full w-[360px]">
@@ -236,7 +244,10 @@ export function SidescrollLanding() {
           </div>
         </motion.div>
 
-        <div className="pointer-events-none fixed bottom-[8%] left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px]">
+        <div
+          className={`pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px]`}
+          style={{ bottom: carBottoms[currentBgIndex] }}
+        >
           <Image
             src="/car.png"
             alt="Car"
