@@ -143,19 +143,23 @@ export function SidescrollLanding() {
   const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
   const lastScrollY = useRef(0);
   const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
-  const [backgroundTiles, setBackgroundTiles] = useState(10);
+  const [backgroundTiles, setBackgroundTiles] = useState(3);
   const [currentBgIndex, setCurrentBgIndex] = useState(() =>
     getTimeBasedBackgroundIndex()
   );
 
   const { scrollYProgress } = useScroll();
+
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001,
   });
-  const translateX = useTransform(smoothProgress, [0, 1], ['0%', `-110%`]);
-
+  const translateX = useTransform(
+    smoothProgress,
+    [0, 1],
+    ['0%', `-${(backgroundTiles - 1) * 100}%`]
+  );
   const scrollByAmount = useCallback((amount: number) => {
     window.scrollBy({
       top: amount,
@@ -176,14 +180,37 @@ export function SidescrollLanding() {
   }, []);
 
   useEffect(() => {
+    let ticking = false;
+    let lastTileCheck = 0;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current) {
-        setScrollDirection('down');
-      } else if (currentScrollY < lastScrollY.current) {
-        setScrollDirection('up');
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollHeight = document.documentElement.scrollHeight;
+          const scrollTop = window.scrollY;
+          const clientHeight = window.innerHeight;
+          const currentScrollY = scrollTop;
+
+          if (currentScrollY > lastScrollY.current) {
+            setScrollDirection('down');
+          } else if (currentScrollY < lastScrollY.current) {
+            setScrollDirection('up');
+          }
+          lastScrollY.current = currentScrollY;
+
+          const now = Date.now();
+          if (
+            scrollTop + clientHeight > scrollHeight * 0.8 &&
+            now - lastTileCheck > 500
+          ) {
+            setBackgroundTiles((prev) => prev + 3);
+            lastTileCheck = now;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
-      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -196,7 +223,6 @@ export function SidescrollLanding() {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         scrollByAmount(scrollStep);
-        setBackgroundTiles(backgroundTiles + 2);
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         scrollByAmount(-scrollStep);
@@ -205,7 +231,7 @@ export function SidescrollLanding() {
     window.addEventListener('keydown', handleKeyDown);
 
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [scrollByAmount, backgroundTiles]);
+  }, [scrollByAmount]);
 
   useEffect(() => {
     if (airplaneAnimationRef.current) {
@@ -248,16 +274,41 @@ export function SidescrollLanding() {
     };
   }, [scrollDirection]);
 
-  console.log(backgroundTiles);
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const direction = scrollTop > lastScrollY.current ? 'down' : 'up';
+      setScrollDirection(direction);
+
+      if (scrollTop === 0) {
+        setBackgroundTiles(3);
+      } else {
+        setBackgroundTiles((prev) => {
+          if (direction === 'down') return prev + 0.3;
+          else return prev > 3 ? prev - 0.05 : 2;
+        });
+      }
+
+      lastScrollY.current = scrollTop;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div ref={containerRef} className="relative h-[600dvh]">
-      <div className="sticky top-0 h-dvh w-screen overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative "
+      style={{ height: `${backgroundTiles * 100}dvh` }}
+    >
+      <div className="sticky top-0 h-dvh w-screen overflow-hidden ">
         <motion.div
           ref={scrollContainerRef}
           style={{ x: translateX }}
           className="absolute flex h-dvh w-[600dvw]"
         >
-          {Array.from({ length: 10 }).map((_, index) => (
+          {Array.from({ length: backgroundTiles }).map((_, index) => (
             <div
               key={index}
               className="relative h-dvh w-[100dvw] flex-shrink-0"
