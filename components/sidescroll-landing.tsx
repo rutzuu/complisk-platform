@@ -1,6 +1,12 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useState,
+} from 'react';
 import {
   motion,
   useScroll,
@@ -144,9 +150,7 @@ export function SidescrollLanding() {
   const lastScrollY = useRef(0);
   const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
   const [backgroundTiles, setBackgroundTiles] = useState(3);
-  const [currentBgIndex, setCurrentBgIndex] = useState(() =>
-    getTimeBasedBackgroundIndex()
-  );
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
 
   const { scrollYProgress } = useScroll();
 
@@ -167,7 +171,7 @@ export function SidescrollLanding() {
     });
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateBackground = () => {
       const newIndex = getTimeBasedBackgroundIndex();
       setCurrentBgIndex(newIndex);
