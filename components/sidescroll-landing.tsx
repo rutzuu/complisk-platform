@@ -124,13 +124,17 @@ const buildings = [
   },
 ];
 
-const BACKGROUNDS = [
-  '/bg.png',
-  '/new-assets/sunday.webp',
-  '/new-assets/night.webp',
-];
-const BUILDING_BOTTOMS = ['14dvh', '27dvh', '27dvh'];
-const CAR_BOTTOMS = ['8%', '20%', '20%'];
+const BACKGROUNDS = ['/new-assets/sunday.webp', '/new-assets/night.webp'];
+const BUILDING_BOTTOMS = ['27dvh', '27dvh'];
+const CAR_BOTTOMS = ['20%', '20%'];
+
+function getTimeBasedBackgroundIndex(): number {
+  const now = new Date();
+  const hours = now.getHours();
+
+  const isDay = hours >= 6 && hours < 20;
+  return isDay ? 0 : 1;
+}
 
 export function SidescrollLanding() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,7 +143,10 @@ export function SidescrollLanding() {
   const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
   const lastScrollY = useRef(0);
   const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
-  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [backgroundTiles, setBackgroundTiles] = useState(10);
+  const [currentBgIndex, setCurrentBgIndex] = useState(() =>
+    getTimeBasedBackgroundIndex()
+  );
 
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, {
@@ -147,7 +154,7 @@ export function SidescrollLanding() {
     damping: 30,
     restDelta: 0.001,
   });
-  const translateX = useTransform(smoothProgress, [0, 1], ['0%', '-110%']);
+  const translateX = useTransform(smoothProgress, [0, 1], ['0%', `-110%`]);
 
   const scrollByAmount = useCallback((amount: number) => {
     window.scrollBy({
@@ -157,9 +164,14 @@ export function SidescrollLanding() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBgIndex((prev) => (prev + 1) % BACKGROUNDS.length);
-    }, 5000);
+    const updateBackground = () => {
+      const newIndex = getTimeBasedBackgroundIndex();
+      setCurrentBgIndex(newIndex);
+    };
+
+    updateBackground();
+
+    const interval = setInterval(updateBackground, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -184,14 +196,16 @@ export function SidescrollLanding() {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         scrollByAmount(scrollStep);
+        setBackgroundTiles(backgroundTiles + 2);
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         scrollByAmount(-scrollStep);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
+
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [scrollByAmount]);
+  }, [scrollByAmount, backgroundTiles]);
 
   useEffect(() => {
     if (airplaneAnimationRef.current) {
@@ -234,6 +248,7 @@ export function SidescrollLanding() {
     };
   }, [scrollDirection]);
 
+  console.log(backgroundTiles);
   return (
     <div ref={containerRef} className="relative h-[600dvh]">
       <div className="sticky top-0 h-dvh w-screen overflow-hidden">
@@ -242,7 +257,7 @@ export function SidescrollLanding() {
           style={{ x: translateX }}
           className="absolute flex h-dvh w-[600dvw]"
         >
-          {Array.from({ length: 9 }).map((_, index) => (
+          {Array.from({ length: 10 }).map((_, index) => (
             <div
               key={index}
               className="relative h-dvh w-[100dvw] flex-shrink-0"
