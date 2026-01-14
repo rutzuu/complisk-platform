@@ -124,13 +124,17 @@ const buildings = [
   },
 ];
 
-const BACKGROUNDS = [
-  '/bg.png',
-  '/new-assets/sunday.webp',
-  '/new-assets/night.webp',
-];
-const BUILDING_BOTTOMS = ['14dvh', '27dvh', '27dvh'];
-const CAR_BOTTOMS = ['8%', '20%', '20%'];
+const BACKGROUNDS = ['/new-assets/sunday.webp', '/new-assets/night.webp'];
+const BUILDING_BOTTOMS = ['27dvh', '27dvh'];
+const CAR_BOTTOMS = ['20%', '20%'];
+
+function getTimeBasedBackgroundIndex(): number {
+  const now = new Date();
+  const hours = now.getHours();
+
+  const isDay = hours >= 6 && hours < 20;
+  return isDay ? 0 : 1;
+}
 
 export function SidescrollLanding() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,16 +143,23 @@ export function SidescrollLanding() {
   const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
   const lastScrollY = useRef(0);
   const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
-  const [currentBgIndex, setCurrentBgIndex] = useState(0);
+  const [backgroundTiles, setBackgroundTiles] = useState(3);
+  const [currentBgIndex, setCurrentBgIndex] = useState(() =>
+    getTimeBasedBackgroundIndex()
+  );
 
   const { scrollYProgress } = useScroll();
+
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001,
   });
-  const translateX = useTransform(smoothProgress, [0, 1], ['0%', '-110%']);
-
+  const translateX = useTransform(
+    smoothProgress,
+    [0, 1],
+    ['0%', `-${(backgroundTiles - 1) * 100}%`]
+  );
   const scrollByAmount = useCallback((amount: number) => {
     window.scrollBy({
       top: amount,
@@ -157,21 +168,49 @@ export function SidescrollLanding() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBgIndex((prev) => (prev + 1) % BACKGROUNDS.length);
-    }, 5000);
+    const updateBackground = () => {
+      const newIndex = getTimeBasedBackgroundIndex();
+      setCurrentBgIndex(newIndex);
+    };
+
+    updateBackground();
+
+    const interval = setInterval(updateBackground, 60000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    let ticking = false;
+    let lastTileCheck = 0;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current) {
-        setScrollDirection('down');
-      } else if (currentScrollY < lastScrollY.current) {
-        setScrollDirection('up');
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollHeight = document.documentElement.scrollHeight;
+          const scrollTop = window.scrollY;
+          const clientHeight = window.innerHeight;
+          const currentScrollY = scrollTop;
+
+          if (currentScrollY > lastScrollY.current) {
+            setScrollDirection('down');
+          } else if (currentScrollY < lastScrollY.current) {
+            setScrollDirection('up');
+          }
+          lastScrollY.current = currentScrollY;
+
+          const now = Date.now();
+          if (
+            scrollTop + clientHeight > scrollHeight * 0.8 &&
+            now - lastTileCheck > 500
+          ) {
+            setBackgroundTiles((prev) => prev + 3);
+            lastTileCheck = now;
+          }
+
+          ticking = false;
+        });
+        ticking = true;
       }
-      lastScrollY.current = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -190,6 +229,7 @@ export function SidescrollLanding() {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
+
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [scrollByAmount]);
 
@@ -234,15 +274,41 @@ export function SidescrollLanding() {
     };
   }, [scrollDirection]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const direction = scrollTop > lastScrollY.current ? 'down' : 'up';
+      setScrollDirection(direction);
+
+      if (scrollTop === 0) {
+        setBackgroundTiles(3);
+      } else {
+        setBackgroundTiles((prev) => {
+          if (direction === 'down') return prev + 0.3;
+          else return prev > 3 ? prev - 0.05 : 2;
+        });
+      }
+
+      lastScrollY.current = scrollTop;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <div ref={containerRef} className="relative h-[600dvh]">
-      <div className="sticky top-0 h-dvh w-screen overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative "
+      style={{ height: `${backgroundTiles * 100}dvh` }}
+    >
+      <div className="sticky top-0 h-dvh w-screen overflow-hidden ">
         <motion.div
           ref={scrollContainerRef}
           style={{ x: translateX }}
           className="absolute flex h-dvh w-[600dvw]"
         >
-          {Array.from({ length: 9 }).map((_, index) => (
+          {Array.from({ length: backgroundTiles }).map((_, index) => (
             <div
               key={index}
               className="relative h-dvh w-[100dvw] flex-shrink-0"

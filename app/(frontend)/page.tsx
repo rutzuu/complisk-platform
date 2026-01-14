@@ -1,9 +1,9 @@
-import { Metadata } from "next"
-import { SidescrollLanding } from "@/components/sidescroll-landing"
-import { generateMetadata as generateSEOMetadata } from "@/lib/metadata"
+import { Metadata } from 'next';
+import { generateMetadata as generateSEOMetadata } from '@/lib/metadata';
+import { SidescrollLanding } from '@/components/sidescroll-landing';
 
-export const metadata: Metadata = generateSEOMetadata()
+export const metadata: Metadata = generateSEOMetadata();
 
 export default function Home() {
-  return <SidescrollLanding />
+  return <SidescrollLanding />;
 }
