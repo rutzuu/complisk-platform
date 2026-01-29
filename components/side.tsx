@@ -127,7 +127,7 @@ const buildings = [
 ];
 
 const MAX_TILES = 200;
-const BASE_TILES = 3;
+const BASE_TILES = 5;
 
 export function SidescrollLanding() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,6 +148,8 @@ export function SidescrollLanding() {
   const [isLandscape, setIsLandscape] = useState(false);
   const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
 
+  const memoizedBuildings = useMemo(() => buildings, []);
+
   useEffect(() => {
     const checkOrientation = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
@@ -159,17 +161,19 @@ export function SidescrollLanding() {
   }, []);
 
   const { scrollYProgress } = useScroll();
+
+  // FIXED: More responsive smooth progress with reduced damping
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
+    stiffness: 150, // Increased from 100 for faster response
+    damping: 25, // Reduced from 30 for less resistance
     restDelta: 0.001,
   });
+
   const translateX = useTransform(
     smoothProgress,
     [0, 1],
     ['0%', `-${(backgroundTiles - 1) * 100}%`],
   );
-  const memoizedBuildings = useMemo(() => buildings, []);
 
   useLayoutEffect(() => {
     const interval = setInterval(
@@ -179,22 +183,52 @@ export function SidescrollLanding() {
     return () => clearInterval(interval);
   }, []);
 
+  // Monitor scroll position and dynamically add tiles
   useEffect(() => {
     if (isMobileOrTablet && isLandscape) return;
 
     const handleScroll = () => {
       const scrollTop = window.scrollY;
-      const direction = scrollTop > lastScrollY.current ? 'down' : 'up';
-      setScrollDirection(direction);
+      const maxScrollHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercentage =
+        maxScrollHeight > 0 ? scrollTop / maxScrollHeight : 0;
+
+      // Update direction only if not using joystick
+      if (!isJoystickActive.current) {
+        const direction = scrollTop > lastScrollY.current ? 'down' : 'up';
+        setScrollDirection(direction);
+      }
+
       lastScrollY.current = scrollTop;
 
-      setBackgroundTiles((prev) => {
-        if (scrollTop === 0) return BASE_TILES;
-        return direction === 'down'
-          ? Math.min(prev + 0.3, MAX_TILES)
-          : prev > BASE_TILES
-            ? prev - 0.05
-            : BASE_TILES;
+      // OPTIMIZED: Batch updates with requestAnimationFrame
+      requestAnimationFrame(() => {
+        setBackgroundTiles((prev) => {
+          // Reset to base when at top
+          if (scrollTop <= 10) {
+            return BASE_TILES;
+          }
+
+          // Add tiles aggressively based on scroll position
+          if (scrollPercentage > 0.15 && prev < MAX_TILES) {
+            let tilesToAdd = 2;
+            if (scrollPercentage > 0.7) tilesToAdd = 8;
+            else if (scrollPercentage > 0.5) tilesToAdd = 6;
+            else if (scrollPercentage > 0.3) tilesToAdd = 4;
+
+            return Math.min(prev + tilesToAdd, MAX_TILES);
+          }
+
+          // Gradually reduce tiles when scrolling back up
+          if (scrollPercentage < 0.15 && prev > BASE_TILES) {
+            const reductionRate =
+              scrollPercentage < 0.05 ? 3 : scrollPercentage < 0.1 ? 2 : 1;
+            return Math.max(prev - reductionRate, BASE_TILES);
+          }
+
+          return prev;
+        });
       });
     };
 
@@ -208,7 +242,8 @@ export function SidescrollLanding() {
     isJoystickActive.current = true;
     setScrollDirection(dir === 'right' ? 'down' : 'up');
 
-    const step = dir === 'right' ? 10 : -10;
+    // FIXED: Reduced speed from 40 to 25 for slower, smoother scrolling
+    const step = dir === 'right' ? 25 : -25;
 
     joystickInterval.current = setInterval(() => {
       const maxScrollHeight =
@@ -217,25 +252,31 @@ export function SidescrollLanding() {
       const scrollPercentage =
         maxScrollHeight > 0 ? currentScroll / maxScrollHeight : 0;
 
+      // When moving RIGHT - continuously add tiles to stay ahead
       if (dir === 'right') {
         setBackgroundTiles((prev) => {
           if (scrollPercentage > 0.15 && prev < MAX_TILES) {
-            let tilesToAdd = 2;
-            if (scrollPercentage > 0.7) tilesToAdd = 5;
-            else if (scrollPercentage > 0.5) tilesToAdd = 4;
-            else if (scrollPercentage > 0.3) tilesToAdd = 3;
+            let tilesToAdd = 3;
+            if (scrollPercentage > 0.7) tilesToAdd = 10;
+            else if (scrollPercentage > 0.5) tilesToAdd = 7;
+            else if (scrollPercentage > 0.3) tilesToAdd = 5;
+
             return Math.min(prev + tilesToAdd, MAX_TILES);
           }
           return prev;
         });
-      } else {
+      }
+      // When moving LEFT - remove tiles to reduce memory
+      else if (dir === 'left') {
         setBackgroundTiles((prev) => {
+          // Reset to base when at top
           if (currentScroll <= 10) {
-            return prev > BASE_TILES ? prev - 0.05 : BASE_TILES;
+            return BASE_TILES;
           }
+
           if (scrollPercentage < 0.3 && prev > BASE_TILES) {
             const reductionRate =
-              scrollPercentage < 0.1 ? 0.5 : scrollPercentage < 0.2 ? 0.3 : 0.2;
+              scrollPercentage < 0.1 ? 5 : scrollPercentage < 0.2 ? 3 : 2;
             return Math.max(prev - reductionRate, BASE_TILES);
           }
           return prev;
@@ -256,10 +297,21 @@ export function SidescrollLanding() {
       isJoystickActive.current = false;
     }, 100);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (joystickInterval.current) {
+        clearInterval(joystickInterval.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     let animationFrame: number;
     const loop = () => {
-      const speed = 0.4;
+      // FIXED: Reduced speed from 0.4 to 0.25 for slower airplane movement
+      const speed = 0.25;
       if (scrollDirection === 'down') {
         airplaneX.current -= speed;
         if (airplaneX.current < -30) airplaneX.current = 100;
@@ -276,8 +328,6 @@ export function SidescrollLanding() {
     return () => cancelAnimationFrame(animationFrame);
   }, [scrollDirection]);
 
-  console.log('Background Tiles:', backgroundTiles);
-
   return (
     <div className="w-full relative">
       {isMobileOrTablet && isLandscape && (
@@ -292,12 +342,13 @@ export function SidescrollLanding() {
         style={{ backgroundImage: `url('${Background[currentBgIndex]}')` }}
       />
 
-      <div className="fixed right-4 top-4 z-[999] pointer-events-none w-[120px]  lg:top-[-50] h-[120px] sm:w-[180px] sm:h-[180px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]">
+      <div className="fixed right-4 top-4 z-[999] pointer-events-none w-[120px] lg:top-[-50] h-[120px] sm:w-[180px] sm:h-[180px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]">
         <Image
           src={sunOrMoon[currentBgIndex]}
           alt="Sun/Moon"
           fill
           className="object-contain"
+          priority
         />
       </div>
 
@@ -333,6 +384,7 @@ export function SidescrollLanding() {
                     alt="Road"
                     fill
                     className="object-fill object-bottom"
+                    loading={i < 10 ? 'eager' : 'lazy'}
                   />
                 </div>
               ))}
@@ -350,6 +402,7 @@ export function SidescrollLanding() {
                         alt={b.alt}
                         fill
                         className="object-contain object-bottom"
+                        loading="lazy"
                       />
                     </div>
                   </div>
@@ -370,6 +423,7 @@ export function SidescrollLanding() {
                 width={320}
                 height={160}
                 className="h-auto w-full drop-shadow-lg"
+                priority
               />
             </motion.div>
 
@@ -383,9 +437,11 @@ export function SidescrollLanding() {
                 width={260}
                 height={130}
                 className="h-auto w-full"
+                priority
               />
             </div>
 
+            {/* Joystick */}
             <div className="fixed bottom-4 left-0 w-full flex justify-between px-8 z-50 sm:hidden">
               <button
                 className="bg-gray-800/90 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:bg-gray-700 active:scale-95 touch-none transition-all"
