@@ -230,12 +230,10 @@ export function SidescrollLanding() {
         });
       } else {
         setBackgroundTiles((prev) => {
-          if (currentScroll <= 10) {
-            return prev > BASE_TILES ? prev - 0.05 : BASE_TILES;
-          }
-          if (scrollPercentage < 0.3 && prev > BASE_TILES) {
+          if (currentScroll <= BASE_TILES) return BASE_TILES;
+          if (prev > BASE_TILES) {
             const reductionRate =
-              scrollPercentage < 0.1 ? 0.5 : scrollPercentage < 0.2 ? 0.3 : 0.2;
+              scrollPercentage < 0.1 ? 0.3 : scrollPercentage < 0.2 ? 0.2 : 0.1;
             return Math.max(prev - reductionRate, BASE_TILES);
           }
           return prev;
@@ -275,8 +273,6 @@ export function SidescrollLanding() {
     loop();
     return () => cancelAnimationFrame(animationFrame);
   }, [scrollDirection]);
-
-  console.log('Background Tiles:', backgroundTiles);
 
   return (
     <div className="w-full relative">
