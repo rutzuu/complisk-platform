@@ -18,122 +18,121 @@ import {
 import Image from 'next/image';
 
 const buildings = [
-  { id: 'market', src: '/market.png', alt: 'Market', left: '0%' },
-  { id: 'pizzeria', src: '/pizzeria.png', alt: 'Pizzeria', left: '4.2%' },
-  { id: 'bakery', src: '/bakery.png', alt: 'Bakery', left: '8.4%' },
-  { id: 'barber', src: '/barber.png', alt: 'Barbershop', left: '12.6%' },
-  { id: 'books', src: '/books.png', alt: 'Bookstore', left: '16.8%' },
-  { id: 'boutique', src: '/boutique.png', alt: 'Boutique', left: '21%' },
-  { id: 'flowers', src: '/flowers.png', alt: 'Flower Shop', left: '25.2%' },
+  { id: 'market', src: '/market.png', alt: 'Market', left: '5%' },
+  { id: 'pizzeria', src: '/pizzeria.png', alt: 'Pizzeria', left: '12%' },
+  { id: 'bakery', src: '/bakery.png', alt: 'Bakery', left: '19%' },
+  { id: 'barber', src: '/barber.png', alt: 'Barbershop', left: '26%' },
+  { id: 'books', src: '/books.png', alt: 'Bookstore', left: '33%' },
+  { id: 'boutique', src: '/boutique.png', alt: 'Boutique', left: '40%' },
+  { id: 'flowers', src: '/flowers.png', alt: 'Flower Shop', left: '47%' },
   {
     id: 'fruits',
     src: '/fruits-and-vegetables.png',
     alt: 'Fruits and Vegetables',
-    left: '29.4%',
+    left: '54%',
   },
-  { id: 'pharmacy', src: '/pharmacy.png', alt: 'Pharmacy', left: '33.6%' },
+  { id: 'pharmacy', src: '/pharmacy.png', alt: 'Pharmacy', left: '61%' },
   {
     id: 'building-1',
     src: '/new-assets/1.webp',
     alt: 'Building 1',
-    left: '37.8%',
+    left: '68%',
   },
   {
     id: 'building-2',
     src: '/new-assets/2.webp',
     alt: 'Building 2',
-    left: '42%',
+    left: '75%',
   },
   {
     id: 'building-3',
     src: '/new-assets/3.webp',
     alt: 'Building 3',
-    left: '46.2%',
+    left: '82%',
   },
   {
     id: 'building-4',
     src: '/new-assets/4.webp',
     alt: 'Building 4',
-    left: '50.4%',
+    left: '89%',
   },
   {
     id: 'building-5',
     src: '/new-assets/5.webp',
     alt: 'Building 5',
-    left: '54.6%',
+    left: '96%',
   },
   {
     id: 'building-6',
     src: '/new-assets/6.webp',
     alt: 'Building 6',
-    left: '58.8%',
+    left: '103%',
   },
   {
     id: 'building-7',
     src: '/new-assets/7.webp',
     alt: 'Building 7',
-    left: '63%',
+    left: '110%',
   },
   {
     id: 'building-8',
     src: '/new-assets/8.webp',
     alt: 'Building 8',
-    left: '67.2%',
+    left: '117%',
   },
   {
     id: 'building-9',
     src: '/new-assets/9.webp',
     alt: 'Building 9',
-    left: '71.4%',
+    left: '124%',
   },
   {
     id: 'building-10',
     src: '/new-assets/10.webp',
     alt: 'Building 10',
-    left: '75.6%',
+    left: '131%',
   },
   {
     id: 'building-11',
     src: '/new-assets/11.webp',
     alt: 'Building 11',
-    left: '79.8%',
+    left: '138%',
   },
   {
     id: 'building-12',
     src: '/new-assets/12.webp',
     alt: 'Building 12',
-    left: '84%',
+    left: '145%',
   },
   {
     id: 'building-13',
     src: '/new-assets/13.webp',
     alt: 'Building 13',
-    left: '88.2%',
+    left: '152%',
   },
   {
     id: 'building-14',
-    src: '/new-assets/14.webp',
+    src: '/new-assets/17.webp',
     alt: 'Building 14',
-    left: '92.4%',
+    left: '159%',
   },
   {
     id: 'building-15',
-    src: '/new-assets/20.webp',
+    src: '/new-assets/21.webp',
     alt: 'Building 15',
-    left: '96.6%',
+    left: '166%',
   },
   {
     id: 'building-16',
     src: '/new-assets/16.webp',
     alt: 'Building 16',
-    left: '100%',
+    left: '173%',
   },
 ];
 
-const BACKGROUNDS = ['/new-assets/sunday.webp', '/new-assets/night.webp'];
-const BUILDING_BOTTOMS = ['27dvh', '27dvh'];
-const CAR_BOTTOMS = ['20%', '20%'];
+const sunOrMoon = ['/sun.webp', '/moon.webp'];
 
+const Background = ['/day-background.webp', '/night-bg.webp'];
 function getTimeBasedBackgroundIndex(): number {
   const now = new Date();
   const hours = now.getHours();
@@ -162,7 +161,7 @@ export function SidescrollLanding() {
   const translateX = useTransform(
     smoothProgress,
     [0, 1],
-    ['0%', `-${(backgroundTiles - 1) * 100}%`]
+    ['0%', `-${(backgroundTiles - 1) * 100}%`],
   );
   const scrollByAmount = useCallback((amount: number) => {
     window.scrollBy({
@@ -301,137 +300,159 @@ export function SidescrollLanding() {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative "
-      style={{ height: `${backgroundTiles * 100}dvh` }}
-    >
-      <div className="sticky top-0 h-dvh w-screen overflow-hidden ">
-        <motion.div
-          ref={scrollContainerRef}
-          style={{ x: translateX }}
-          className="absolute flex h-dvh w-[600dvw]"
-        >
-          {Array.from({ length: backgroundTiles }).map((_, index) => (
-            <div
-              key={index}
-              className="relative h-dvh w-[100dvw] flex-shrink-0"
-            >
-              <Image
-                src={BACKGROUNDS[currentBgIndex]}
-                alt="Road background"
-                fill
-                className="object-fill object-bottom"
-                priority
-              />
-            </div>
-          ))}
-
-          <div className="pointer-events-none absolute inset-0">
-            {buildings.map((building) => (
-              <motion.div
-                key={building.id}
-                className="absolute  flex items-end pointer-events-auto cursor-pointer"
-                style={{
-                  left: building.left,
-                  height: '360px',
-                  bottom: BUILDING_BOTTOMS[currentBgIndex],
-                  translateX,
-                }}
-                whileHover={{
-                  y: -10,
-                  filter: 'drop-shadow(0 0 20px rgba(255, 200, 100, 0.6))',
-                }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 400,
-                  damping: 17,
-                }}
-              >
-                <div className="relative h-full w-[360px]">
-                  <Image
-                    src={building.src}
-                    alt={building.alt}
-                    fill
-                    priority
-                    className="object-contain object-bottom"
-                  />
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          className={`pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px]`}
-          style={{
-            bottom: CAR_BOTTOMS[currentBgIndex],
-            transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
-            transformOrigin: 'center',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitFontSmoothing: 'antialiased',
-            willChange: 'transform',
-          }}
-          animate={{
-            scaleX: scrollDirection === 'up' ? -1 : 1,
-          }}
-          transition={{
-            duration: 0.3,
-            ease: 'easeInOut',
-          }}
-        >
+    <div className="w-full relative">
+      <div
+        className="fixed inset-0 w-full h-full z-0"
+        style={{
+          backgroundImage: `url('${Background[currentBgIndex]}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+      <div className="fixed top-[-10dvh] right-5 w-[400px] h-[400px] z-[5] pointer-events-none">
+        <div className="relative w-full h-full">
           <Image
-            src="/car.png"
-            alt="Car"
-            width={320}
-            height={160}
-            className="h-auto w-full drop-shadow-lg"
-            style={{
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitFontSmoothing: 'antialiased',
-            }}
+            src={sunOrMoon[currentBgIndex]}
+            alt="Sun"
+            fill
+            className="object-contain"
             priority
-            quality={100}
-            unoptimized
           />
-        </motion.div>
+        </div>
+      </div>
 
-        <motion.div
-          style={{
-            x: `${airplaneX}vw`,
-            transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
-            transformOrigin: 'center',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            WebkitFontSmoothing: 'antialiased',
-            willChange: 'transform',
-          }}
-          animate={{
-            scaleX: scrollDirection === 'up' ? -1 : 1,
-          }}
-          transition={{
-            duration: 0.3,
-            ease: 'easeInOut',
-          }}
-          className="pointer-events-none fixed top-[10%] left-0 z-40 w-[250px] md:w-[300px] lg:w-[260px]"
-        >
-          <Image
-            src="/airplane.png"
-            alt="Airplane"
-            width={260}
-            height={130}
-            className="h-auto w-full"
+      {currentBgIndex === 0 && (
+        <div className="fixed top-[-10dvh] left-5 w-[400px] h-[400px] z-[5] pointer-events-none">
+          <div className="relative w-full h-full">
+            <Image
+              src="/cloud.webp"
+              alt="Clouds"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+      )}
+
+      <div ref={containerRef} style={{ height: `${backgroundTiles * 100}dvh` }}>
+        <div className="sticky top-50 h-dvh w-screen overflow-hidden">
+          <motion.div
+            ref={scrollContainerRef}
+            style={{ x: translateX }}
+            className="absolute flex h-dvh w-[600dvw] z-10"
+          >
+            {Array.from({ length: backgroundTiles }).map((_, index) => (
+              <div
+                key={`road-${index}`}
+                className="relative h-dvh w-[100dvw] flex-shrink-0"
+              >
+                <Image
+                  src="/road.webp"
+                  alt="Road"
+                  fill
+                  className="object-fill object-bottom"
+                  priority
+                />
+              </div>
+            ))}
+
+            <div className="pointer-events-none absolute top-0 left-0 h-dvh w-[600dvw]">
+              {buildings.map((building) => (
+                <motion.div
+                  key={building.id}
+                  className="absolute pointer-events-auto cursor-pointer"
+                  style={{
+                    left: building.left,
+                    bottom: '38dvh',
+                  }}
+                >
+                  <div className="relative w-[300px] h-[300px]">
+                    <Image
+                      src={building.src}
+                      alt={building.alt}
+                      fill
+                      className="object-contain object-bottom"
+                      priority
+                    />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px]"
             style={{
+              bottom: '3%',
+              transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
+              transformOrigin: 'center',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               WebkitFontSmoothing: 'antialiased',
+              willChange: 'transform',
             }}
-            quality={100}
-            unoptimized
-          />
-        </motion.div>
+            animate={{
+              scaleX: scrollDirection === 'up' ? -1 : 1,
+            }}
+            transition={{
+              duration: 0.3,
+              ease: 'easeInOut',
+            }}
+          >
+            <Image
+              src="/car.png"
+              alt="Car"
+              width={320}
+              height={160}
+              className="h-auto w-full drop-shadow-lg"
+              style={{
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitFontSmoothing: 'antialiased',
+              }}
+              priority
+              quality={100}
+              unoptimized
+            />
+          </motion.div>
+
+          <motion.div
+            style={{
+              x: `${airplaneX}vw`,
+              transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
+              transformOrigin: 'center',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              WebkitFontSmoothing: 'antialiased',
+              willChange: 'transform',
+            }}
+            animate={{
+              scaleX: scrollDirection === 'up' ? -1 : 1,
+            }}
+            transition={{
+              duration: 0.3,
+              ease: 'easeInOut',
+            }}
+            className="pointer-events-none fixed top-[10%] left-0 z-40 w-[250px] md:w-[300px] lg:w-[260px]"
+          >
+            <Image
+              src="/airplane.png"
+              alt="Airplane"
+              width={260}
+              height={130}
+              className="h-auto w-full"
+              style={{
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                WebkitFontSmoothing: 'antialiased',
+              }}
+              quality={100}
+              unoptimized
+            />
+          </motion.div>
+        </div>
       </div>
     </div>
   );
