@@ -16,6 +16,7 @@ import {
   AnimationPlaybackControls,
 } from 'motion/react';
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight, RotateCw } from 'lucide-react';
 
 const buildings = [
   { id: 'market', src: '/market.png', alt: 'Market', left: '5%' },
@@ -150,7 +151,7 @@ export function SidescrollLanding() {
   const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
   const [backgroundTiles, setBackgroundTiles] = useState(3);
   const [currentBgIndex, setCurrentBgIndex] = useState(0);
-
+  const joystickRef = useRef<NodeJS.Timeout | null>(null);
   const { scrollYProgress } = useScroll();
 
   const smoothProgress = useSpring(scrollYProgress, {
@@ -298,9 +299,37 @@ export function SidescrollLanding() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  const handleMove = (dir: 'left' | 'right') => {
+    const scrollStep = dir === 'right' ? 30 : -30;
+    const move = () => {
+      window.scrollBy({ top: scrollStep, behavior: 'auto' });
+      joystickRef.current = setTimeout(move, 16);
+    };
+    move();
+  };
 
+  const stopMove = () => {
+    if (joystickRef.current) clearTimeout(joystickRef.current);
+  };
+
+  console.log(
+    'Rendering SidescrollLanding with background index:',
+    backgroundTiles,
+  );
   return (
     <div className="w-full relative">
+      <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center text-white text-center p-6 lg:hidden landscape:hidden">
+        <motion.div
+          animate={{ rotate: 90 }}
+          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+        >
+          <RotateCw size={64} className="mb-4 text-amber-400" />
+        </motion.div>
+        <h2 className="text-xl font-bold uppercase tracking-widest">
+          Landscape Mode Required
+        </h2>
+      </div>
+
       <div
         className="fixed inset-0 w-full h-full z-0"
         style={{
@@ -310,7 +339,8 @@ export function SidescrollLanding() {
           backgroundRepeat: 'no-repeat',
         }}
       />
-      <div className="fixed top-[-10dvh] right-5 w-[400px] h-[400px] z-[5] pointer-events-none">
+
+      <div className="fixed top-[-10dvh] right-5 w-[400px] h-[400px] z-[5] pointer-events-none max-lg:right-[-20] max-md:right-[-40] max-md:w-[200px] max-md:h-[200px]">
         <div className="relative w-full h-full">
           <Image
             src={sunOrMoon[currentBgIndex]}
@@ -323,7 +353,7 @@ export function SidescrollLanding() {
       </div>
 
       {currentBgIndex === 0 && (
-        <div className="fixed top-[-10dvh] left-5 w-[400px] h-[400px] z-[5] pointer-events-none">
+        <div className="fixed top-[-10dvh] left-5 w-[400px] h-[400px] z-[5] pointer-events-none max-lg:left-[-20] max-md:right-[-40] max-md:w-[200px] max-md:h-[200px]">
           <div className="relative w-full h-full">
             <Image
               src="/cloud.webp"
@@ -337,7 +367,7 @@ export function SidescrollLanding() {
       )}
 
       <div ref={containerRef} style={{ height: `${backgroundTiles * 100}dvh` }}>
-        <div className="sticky top-50 h-dvh w-screen overflow-hidden">
+        <div className="sticky top-50 h-dvh w-screen overflow-hidden max-md:top-18">
           <motion.div
             ref={scrollContainerRef}
             style={{ x: translateX }}
@@ -346,7 +376,7 @@ export function SidescrollLanding() {
             {Array.from({ length: backgroundTiles }).map((_, index) => (
               <div
                 key={`road-${index}`}
-                className="relative h-dvh w-[100dvw] flex-shrink-0"
+                className="relative h-dvh w-[100dvw] flex-shrink-0  "
               >
                 <Image
                   src="/road.webp"
@@ -362,13 +392,12 @@ export function SidescrollLanding() {
               {buildings.map((building) => (
                 <motion.div
                   key={building.id}
-                  className="absolute pointer-events-auto cursor-pointer"
+                  className="absolute pointer-events-auto cursor-pointer bottom-[38dvh] max-lg:bottom-[40dvh] max-md:bottom-[37dvh]"
                   style={{
                     left: building.left,
-                    bottom: '38dvh',
                   }}
                 >
-                  <div className="relative w-[300px] h-[300px]">
+                  <div className="relative w-[300px] h-[300px] max-md:w-[150px] max-md:h-[150px]">
                     <Image
                       src={building.src}
                       alt={building.alt}
@@ -383,9 +412,8 @@ export function SidescrollLanding() {
           </motion.div>
 
           <motion.div
-            className="pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px]"
+            className="pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px] bottom-[3%] max-xl:bottom-[1%] max-md:w-[150px]  max-md:h-[150px] max-md:bottom-[-15%]"
             style={{
-              bottom: '3%',
               transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
               transformOrigin: 'center',
               backfaceVisibility: 'hidden',
@@ -435,7 +463,7 @@ export function SidescrollLanding() {
               duration: 0.3,
               ease: 'easeInOut',
             }}
-            className="pointer-events-none fixed top-[10%] left-0 z-40 w-[250px] md:w-[300px] lg:w-[260px]"
+            className="pointer-events-none fixed top-[10%] left-0 z-40 w-[250px] md:w-[300px] lg:w-[260px] max-md:w-[150px] max-md:h-[150px]"
           >
             <Image
               src="/airplane.png"
@@ -452,6 +480,34 @@ export function SidescrollLanding() {
               unoptimized
             />
           </motion.div>
+        </div>
+      </div>
+
+      <div className="hidden landscape:flex">
+        <div className="fixed bottom-5 left-5 z-[10000] lg:hidden">
+          <button
+            onPointerDown={() => handleMove('left')}
+            onPointerUp={stopMove}
+            onPointerLeave={stopMove}
+            onTouchStart={() => handleMove('left')}
+            onTouchEnd={stopMove}
+            className="w-12 h-12 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center active:scale-90 transition-transform touch-none select-none shadow-2xl"
+          >
+            <ChevronLeft size={35} className="text-white" />
+          </button>
+        </div>
+
+        <div className="fixed bottom-5 right-5 z-[10000] lg:hidden">
+          <button
+            onPointerDown={() => handleMove('right')}
+            onPointerUp={stopMove}
+            onPointerLeave={stopMove}
+            onTouchStart={() => handleMove('right')}
+            onTouchEnd={stopMove}
+            className="w-12 h-12 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center active:scale-90 transition-transform touch-none select-none shadow-2xl"
+          >
+            <ChevronRight size={35} className="text-white" />
+          </button>
         </div>
       </div>
     </div>
