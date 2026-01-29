@@ -1,22 +1,17 @@
 'use client';
 
-import {
-  useRef,
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  useState,
-} from 'react';
-import {
-  motion,
-  useScroll,
-  useTransform,
-  useSpring,
-  animate,
-  AnimationPlaybackControls,
-} from 'motion/react';
+import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react';
+import { motion, useScroll, useTransform, useSpring } from 'motion/react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, RotateCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const sunOrMoon = ['/sun.webp', '/moon.webp'];
+const Background = ['/day-background.webp', '/night-bg.webp'];
+
+function getTimeBasedBackgroundIndex(): number {
+  const hours = new Date().getHours();
+  return hours >= 6 && hours < 20 ? 0 : 1;
+}
 
 const buildings = [
   { id: 'market', src: '/market.png', alt: 'Market', left: '5%' },
@@ -29,7 +24,7 @@ const buildings = [
   {
     id: 'fruits',
     src: '/fruits-and-vegetables.png',
-    alt: 'Fruits and Vegetables',
+    alt: 'Fruits & Vegetables',
     left: '54%',
   },
   { id: 'pharmacy', src: '/pharmacy.png', alt: 'Pharmacy', left: '61%' },
@@ -131,29 +126,38 @@ const buildings = [
   },
 ];
 
-const sunOrMoon = ['/sun.webp', '/moon.webp'];
-
-const Background = ['/day-background.webp', '/night-bg.webp'];
-function getTimeBasedBackgroundIndex(): number {
-  const now = new Date();
-  const hours = now.getHours();
-
-  const isDay = hours >= 6 && hours < 20;
-  return isDay ? 0 : 1;
-}
+const MAX_TILES = 200;
+const BASE_TILES = 3;
 
 export function SidescrollLanding() {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [airplaneX, setAirplaneX] = useState(100);
-  const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
-  const lastScrollY = useRef(0);
-  const airplaneAnimationRef = useRef<AnimationPlaybackControls | null>(null);
-  const [backgroundTiles, setBackgroundTiles] = useState(3);
-  const [currentBgIndex, setCurrentBgIndex] = useState(0);
-  const joystickRef = useRef<NodeJS.Timeout | null>(null);
-  const { scrollYProgress } = useScroll();
+  const airplaneRef = useRef<HTMLDivElement>(null);
 
+  const lastScrollY = useRef(0);
+  const airplaneX = useRef(100);
+
+  const joystickInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const [scrollDirection, setScrollDirection] = useState<'down' | 'up'>('down');
+  const [backgroundTiles, setBackgroundTiles] = useState(BASE_TILES);
+  const [currentBgIndex, setCurrentBgIndex] = useState(
+    getTimeBasedBackgroundIndex(),
+  );
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [isMobileOrTablet, setIsMobileOrTablet] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+      setIsMobileOrTablet(window.innerWidth < 1024);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    return () => window.removeEventListener('resize', checkOrientation);
+  }, []);
+
+  const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
@@ -164,352 +168,228 @@ export function SidescrollLanding() {
     [0, 1],
     ['0%', `-${(backgroundTiles - 1) * 100}%`],
   );
-  const scrollByAmount = useCallback((amount: number) => {
-    window.scrollBy({
-      top: amount,
-      behavior: 'smooth',
-    });
-  }, []);
+  const memoizedBuildings = useMemo(() => buildings, []);
 
   useLayoutEffect(() => {
-    const updateBackground = () => {
-      const newIndex = getTimeBasedBackgroundIndex();
-      setCurrentBgIndex(newIndex);
-    };
-
-    updateBackground();
-
-    const interval = setInterval(updateBackground, 60000);
+    const interval = setInterval(
+      () => setCurrentBgIndex(getTimeBasedBackgroundIndex()),
+      60000,
+    );
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    let ticking = false;
-    let lastTileCheck = 0;
+    if (isMobileOrTablet && isLandscape) return;
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const scrollHeight = document.documentElement.scrollHeight;
-          const scrollTop = window.scrollY;
-          const clientHeight = window.innerHeight;
-          const currentScrollY = scrollTop;
-
-          if (currentScrollY > lastScrollY.current) {
-            setScrollDirection('down');
-          } else if (currentScrollY < lastScrollY.current) {
-            setScrollDirection('up');
-          }
-          lastScrollY.current = currentScrollY;
-
-          const now = Date.now();
-          if (
-            scrollTop + clientHeight > scrollHeight * 0.8 &&
-            now - lastTileCheck > 500
-          ) {
-            setBackgroundTiles((prev) => prev + 3);
-            lastTileCheck = now;
-          }
-
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const scrollStep = window.innerHeight * 0.3;
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        scrollByAmount(scrollStep);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        scrollByAmount(-scrollStep);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [scrollByAmount]);
-
-  useEffect(() => {
-    if (airplaneAnimationRef.current) {
-      airplaneAnimationRef.current.stop();
-    }
-
-    let currentX = airplaneX;
-
-    const animateAirplane = () => {
-      const startX = currentX;
-      const endX = scrollDirection === 'down' ? -20 : 120;
-      const duration = Math.abs(endX - startX) / 15;
-
-      const controls = animate(startX, endX, {
-        duration: duration,
-        ease: 'linear',
-        onUpdate: (latest) => {
-          setAirplaneX(latest);
-          currentX = latest;
-        },
-        onComplete: () => {
-          if (scrollDirection === 'down') {
-            currentX = 100;
-            setAirplaneX(100);
-          } else {
-            currentX = -20;
-            setAirplaneX(-20);
-          }
-          animateAirplane();
-        },
-      });
-
-      airplaneAnimationRef.current = controls;
-      return controls;
-    };
-
-    const controls = animateAirplane();
-    return () => {
-      if (controls) controls.stop();
-    };
-  }, [scrollDirection]);
-
-  useEffect(() => {
     const handleScroll = () => {
       const scrollTop = window.scrollY;
       const direction = scrollTop > lastScrollY.current ? 'down' : 'up';
       setScrollDirection(direction);
-
-      if (scrollTop === 0) {
-        setBackgroundTiles(3);
-      } else {
-        setBackgroundTiles((prev) => {
-          if (direction === 'down') return prev + 0.3;
-          else return prev > 3 ? prev - 0.05 : 2;
-        });
-      }
-
       lastScrollY.current = scrollTop;
+
+      setBackgroundTiles((prev) => {
+        if (scrollTop === 0) return BASE_TILES;
+        return direction === 'down'
+          ? Math.min(prev + 0.3, MAX_TILES)
+          : prev > BASE_TILES
+            ? prev - 0.05
+            : BASE_TILES;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-  const handleMove = (dir: 'left' | 'right') => {
-    const scrollStep = dir === 'right' ? 30 : -30;
-    const move = () => {
-      window.scrollBy({ top: scrollStep, behavior: 'auto' });
-      joystickRef.current = setTimeout(move, 16);
+  }, [isMobileOrTablet, isLandscape]);
+
+  const handleMoveStart = (dir: 'left' | 'right') => {
+    if (joystickInterval.current) return;
+    const step = dir === 'right' ? 40 : -40;
+    joystickInterval.current = setInterval(() => {
+      window.scrollBy({ top: step, behavior: 'smooth' });
+    }, 50);
+  };
+  const handleMoveEnd = () => {
+    if (joystickInterval.current) {
+      clearInterval(joystickInterval.current);
+      joystickInterval.current = null;
+    }
+  };
+
+  useEffect(() => {
+    let animationFrame: number;
+    const loop = () => {
+      const speed = 0.4;
+      if (scrollDirection === 'down') {
+        airplaneX.current -= speed;
+        if (airplaneX.current < -30) airplaneX.current = 100;
+      } else {
+        airplaneX.current += speed;
+        if (airplaneX.current > 120) airplaneX.current = -20;
+      }
+      if (airplaneRef.current) {
+        airplaneRef.current.style.transform = `translateX(${airplaneX.current}vw) scaleX(${scrollDirection === 'up' ? -1 : 1})`;
+      }
+      animationFrame = requestAnimationFrame(loop);
     };
-    move();
-  };
+    loop();
+    return () => cancelAnimationFrame(animationFrame);
+  }, [scrollDirection]);
 
-  const stopMove = () => {
-    if (joystickRef.current) clearTimeout(joystickRef.current);
-  };
-
-  console.log(
-    'Rendering SidescrollLanding with background index:',
-    backgroundTiles,
-  );
   return (
     <div className="w-full relative">
-      <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center text-white text-center p-6 lg:hidden landscape:hidden">
-        <motion.div
-          animate={{ rotate: 90 }}
-          transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-        >
-          <RotateCw size={64} className="mb-4 text-amber-400" />
-        </motion.div>
-        <h2 className="text-xl font-bold uppercase tracking-widest">
-          Landscape Mode Required
-        </h2>
-      </div>
-
-      <div
-        className="fixed inset-0 w-full h-full z-0"
-        style={{
-          backgroundImage: `url('${Background[currentBgIndex]}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
-
-      <div className="fixed top-[-10dvh] right-5 w-[400px] h-[400px] z-[5] pointer-events-none max-lg:right-[-20] max-md:right-[-40] max-md:w-[200px] max-md:h-[200px]">
-        <div className="relative w-full h-full">
-          <Image
-            src={sunOrMoon[currentBgIndex]}
-            alt="Sun"
-            fill
-            className="object-contain"
-            priority
-          />
-        </div>
-      </div>
-
-      {currentBgIndex === 0 && (
-        <div className="fixed top-[-10dvh] left-5 w-[400px] h-[400px] z-[5] pointer-events-none max-lg:left-[-20] max-md:right-[-40] max-md:w-[200px] max-md:h-[200px]">
-          <div className="relative w-full h-full">
-            <Image
-              src="/cloud.webp"
-              alt="Clouds"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
+      {isMobileOrTablet && isLandscape && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 text-white text-lg sm:text-2xl font-bold p-4 text-center">
+          Please rotate your device to{' '}
+          <span className="text-yellow-400">Portrait</span> mode
         </div>
       )}
 
-      <div ref={containerRef} style={{ height: `${backgroundTiles * 100}dvh` }}>
-        <div className="sticky top-50 h-dvh w-screen overflow-hidden max-md:top-18">
-          <motion.div
-            ref={scrollContainerRef}
-            style={{ x: translateX }}
-            className="absolute flex h-dvh w-[600dvw] z-10"
-          >
-            {Array.from({ length: backgroundTiles }).map((_, index) => (
-              <div
-                key={`road-${index}`}
-                className="relative h-dvh w-[100dvw] flex-shrink-0  "
-              >
-                <Image
-                  src="/road.webp"
-                  alt="Road"
-                  fill
-                  className="object-fill object-bottom"
-                  priority
-                />
-              </div>
-            ))}
+      <div
+        className="fixed inset-0 w-full h-full z-0 bg-cover bg-center"
+        style={{ backgroundImage: `url('${Background[currentBgIndex]}')` }}
+      />
 
-            <div className="pointer-events-none absolute top-0 left-0 h-dvh w-[600dvw]">
-              {buildings.map((building) => (
-                <motion.div
-                  key={building.id}
-                  className="absolute pointer-events-auto cursor-pointer bottom-[38dvh] max-lg:bottom-[40dvh] max-md:bottom-[37dvh]"
-                  style={{
-                    left: building.left,
-                  }}
+      <div className="fixed right-4 top-4 z-[999] pointer-events-none w-[120px]  lg:top-[-50] h-[120px] sm:w-[180px] sm:h-[180px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]">
+        <Image
+          src={sunOrMoon[currentBgIndex]}
+          alt="Sun/Moon"
+          fill
+          className="object-contain"
+        />
+      </div>
+
+      {currentBgIndex === 0 && (
+        <div className="fixed left-4 top-4 lg:top-[-50] z-[998] pointer-events-none w-[120px] h-[120px] sm:w-[180px] sm:h-[180px] md:w-[250px] md:h-[250px] lg:w-[350px] lg:h-[350px]">
+          <Image
+            src="/cloud.webp"
+            alt="Clouds"
+            fill
+            className="object-contain"
+          />
+        </div>
+      )}
+
+      {(!isMobileOrTablet || !isLandscape) && (
+        <div
+          ref={containerRef}
+          style={{ height: `${backgroundTiles * 100}dvh` }}
+        >
+          <div className="sticky top-0 h-dvh w-screen overflow-hidden">
+            <motion.div
+              ref={scrollContainerRef}
+              style={{ x: translateX }}
+              className="absolute flex h-dvh w-[600dvw] z-10 top-40"
+            >
+              {Array.from({ length: backgroundTiles }).map((_, i) => (
+                <div
+                  key={`road-${i}`}
+                  className="relative h-dvh w-[100dvw] flex-shrink-0"
                 >
-                  <div className="relative w-[300px] h-[300px] max-md:w-[150px] max-md:h-[150px]">
-                    <Image
-                      src={building.src}
-                      alt={building.alt}
-                      fill
-                      className="object-contain object-bottom"
-                      priority
-                    />
-                  </div>
-                </motion.div>
+                  <Image
+                    src="/road.webp"
+                    alt="Road"
+                    fill
+                    className="object-fill object-bottom"
+                  />
+                </div>
               ))}
+
+              <div className="pointer-events-none absolute top-0 left-0 h-dvh w-[600dvw]">
+                {memoizedBuildings.map((b) => (
+                  <div
+                    key={b.id}
+                    className="absolute bottom-[40dvh] lg:bottom-[38dvh]"
+                    style={{ left: b.left }}
+                  >
+                    <div className="relative w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] md:w-[300px] md:h-[300px] lg:w-[330px] lg:h-[330px] xl:w-[350px] xl:h-[350px]">
+                      <Image
+                        src={b.src}
+                        alt={b.alt}
+                        fill
+                        className="object-contain object-bottom"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="pointer-events-none fixed left-[8%] bottom-[8%] md:bottom-[12%] lg:bottom-[7%] z-50 w-[150px] sm:w-[180px] md:w-[300px] lg:w-[330px] xl:w-[350px]"
+              style={{
+                transform:
+                  scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
+              }}
+            >
+              <Image
+                src="/car.png"
+                alt="Car"
+                width={320}
+                height={160}
+                className="h-auto w-full drop-shadow-lg"
+              />
+            </motion.div>
+
+            <div
+              ref={airplaneRef}
+              className="pointer-events-none fixed top-[10%] left-0 z-40 w-[150px] sm:w-[180px] md:w-[300px] lg:w-[330px] xl:w-[350px]"
+            >
+              <Image
+                src="/airplane.png"
+                alt="Airplane"
+                width={260}
+                height={130}
+                className="h-auto w-full"
+              />
             </div>
-          </motion.div>
 
-          <motion.div
-            className="pointer-events-none fixed left-[10%] z-50 w-[200px] md:w-[280px] lg:w-[320px] bottom-[3%] max-xl:bottom-[1%] max-md:w-[150px]  max-md:h-[150px] max-md:bottom-[-15%]"
-            style={{
-              transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
-              transformOrigin: 'center',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitFontSmoothing: 'antialiased',
-              willChange: 'transform',
-            }}
-            animate={{
-              scaleX: scrollDirection === 'up' ? -1 : 1,
-            }}
-            transition={{
-              duration: 0.3,
-              ease: 'easeInOut',
-            }}
-          >
-            <Image
-              src="/car.png"
-              alt="Car"
-              width={320}
-              height={160}
-              className="h-auto w-full drop-shadow-lg"
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitFontSmoothing: 'antialiased',
-              }}
-              priority
-              quality={100}
-              unoptimized
-            />
-          </motion.div>
-
-          <motion.div
-            style={{
-              x: `${airplaneX}vw`,
-              transform: scrollDirection === 'up' ? 'scaleX(-1)' : 'scaleX(1)',
-              transformOrigin: 'center',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              WebkitFontSmoothing: 'antialiased',
-              willChange: 'transform',
-            }}
-            animate={{
-              scaleX: scrollDirection === 'up' ? -1 : 1,
-            }}
-            transition={{
-              duration: 0.3,
-              ease: 'easeInOut',
-            }}
-            className="pointer-events-none fixed top-[10%] left-0 z-40 w-[250px] md:w-[300px] lg:w-[260px] max-md:w-[150px] max-md:h-[150px]"
-          >
-            <Image
-              src="/airplane.png"
-              alt="Airplane"
-              width={260}
-              height={130}
-              className="h-auto w-full"
-              style={{
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                WebkitFontSmoothing: 'antialiased',
-              }}
-              quality={100}
-              unoptimized
-            />
-          </motion.div>
+            {/* Joystick */}
+            {/* <button
+                className="bg-gray-800 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg active:bg-gray-700"
+                onMouseDown={() => handleMoveStart('left')}
+                onMouseUp={handleMoveEnd}
+                onMouseLeave={handleMoveEnd}
+                onTouchStart={() => handleMoveStart('left')}
+                onTouchEnd={handleMoveEnd}
+              >
+                ◀
+              </button>
+              <button
+                className="bg-gray-800 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg active:bg-gray-700"
+                onMouseDown={() => handleMoveStart('right')}
+                onMouseUp={handleMoveEnd}
+                onMouseLeave={handleMoveEnd}
+                onTouchStart={() => handleMoveStart('right')}
+                onTouchEnd={handleMoveEnd}
+              >
+                ▶
+              </button> */}
+            <div className="fixed bottom-4 left-0 w-full flex justify-between px-8 z-50 sm:hidden">
+              {' '}
+              <button
+                className="bg-gray-800 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:bg-gray-700"
+                onMouseDown={() => handleMoveStart('left')}
+                onMouseUp={handleMoveEnd}
+                onMouseLeave={handleMoveEnd}
+                onTouchStart={() => handleMoveStart('left')}
+                onTouchEnd={handleMoveEnd}
+              >
+                <ChevronLeft size={20} />{' '}
+              </button>
+              <button
+                className="bg-gray-800 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg active:bg-gray-700"
+                onMouseDown={() => handleMoveStart('right')}
+                onMouseUp={handleMoveEnd}
+                onMouseLeave={handleMoveEnd}
+                onTouchStart={() => handleMoveStart('right')}
+                onTouchEnd={handleMoveEnd}
+              >
+                <ChevronRight size={20} />{' '}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="hidden landscape:flex">
-        <div className="fixed bottom-5 left-5 z-[10000] lg:hidden">
-          <button
-            onPointerDown={() => handleMove('left')}
-            onPointerUp={stopMove}
-            onPointerLeave={stopMove}
-            onTouchStart={() => handleMove('left')}
-            onTouchEnd={stopMove}
-            className="w-12 h-12 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center active:scale-90 transition-transform touch-none select-none shadow-2xl"
-          >
-            <ChevronLeft size={35} className="text-white" />
-          </button>
-        </div>
-
-        <div className="fixed bottom-5 right-5 z-[10000] lg:hidden">
-          <button
-            onPointerDown={() => handleMove('right')}
-            onPointerUp={stopMove}
-            onPointerLeave={stopMove}
-            onTouchStart={() => handleMove('right')}
-            onTouchEnd={stopMove}
-            className="w-12 h-12 bg-white/20 backdrop-blur-xl border border-white/30 rounded-full flex items-center justify-center active:scale-90 transition-transform touch-none select-none shadow-2xl"
-          >
-            <ChevronRight size={35} className="text-white" />
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
